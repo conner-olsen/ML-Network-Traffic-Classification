@@ -1,16 +1,16 @@
 #SVM.py
 
-'''
+"""
     author: em
-    project: group 7 
+    project: group 7
     class: CS-534 WPI
     last update: July 5, 2023
 
     Class file for the SVM implementation
 
-    API reference: 
+    API reference:
     https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html#sklearn.svm.SVC
-'''
+"""
 from sklearn.svm import SVC
 import pandas as pd
 import numpy as np
@@ -19,24 +19,21 @@ from sklearn.inspection import DecisionBoundaryDisplay
 
 class SVM:
 
-    #**********************************************************
+    # **********************************************************
     def __init__(self, attributes, k_type, d=3, c=0.0, v=True,
                  cache = 8000, model_name: str='default' 
                  ):
-    #
-    #   constructor
-    #   
-    #   params:
-    #       attributes (str[]): list of column headers to use
-    #           for training and testing (may not handle full 
-    #           column dimension)
-    #       k_type (str): kernel type - poly,rbf, linear, etc
-    #       d (int): dimension (for poly kernel)
-    #       c (float): regularization parameter
-    #       v (bool): verbose (good for debugging)
-    #       cache (int): cache size (bytes)
-    #       model_name (str): name of the SVM being trained
-    #**********************************************************
+        """
+            :author: em
+            :project: group 7
+            :class: CS-534 WPI
+            :last update: July 5, 2023
+
+            Class file for the SVM implementation
+
+            API reference:
+            https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html#sklearn.svm.SVC
+        """
         self.model_name = model_name
         self.attributes = attributes
         self.model = SVC(kernel=k_type,degree=d, C=c, 

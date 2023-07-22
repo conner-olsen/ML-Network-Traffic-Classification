@@ -236,7 +236,6 @@ def get_model_type():
     #   returns:
     #       model_type (str): the type of model from selection menu
     # *********************************************************************
-    idx = -1
     for i in range(len(MODEL_ROOT)):
         print(str(i) + ': ' + MODEL_ROOT[i])
 
