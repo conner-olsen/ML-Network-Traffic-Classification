@@ -1,0 +1,16 @@
+# Default ignored files
+/shelf/
+/workspace.xml
+# Editor-based HTTP Client requests
+/httpRequests/
+# Datasource local storage ignored files
+/dataSources/
+/dataSources.local.xml
+
+.idea
+.DS_Store
+Data/.DS_Store
+Data/datasets/CIDDS_Internal_test.csv
+Data/datasets/CIDDS_Internal_train.csv
+Data/.DS_Store
+.DS_Store
