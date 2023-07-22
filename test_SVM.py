@@ -9,7 +9,7 @@
     file to test class implementation and integration for svm model
 """
 from SVM.SVM import SVM
-from Utilities.evaluate import evaluate_model
+from Utilities.eval import evaluate_model
 from Utilities.prepare_data import load_dataset
 
 DATA_ROOT = "Data/datasets/CIDDS/"

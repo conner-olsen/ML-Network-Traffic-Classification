@@ -9,7 +9,7 @@
     file to test implementation and integration of the DT class
 """
 from DT.DT import DT
-from Utilities.evaluate import evaluate_model
+from Utilities.eval import evaluate_model
 from Utilities.prepare_data import load_dataset
 
 DATA_ROOT = "Data/datasets/CIDDS/"
