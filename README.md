@@ -19,3 +19,22 @@ The main project root folder contains:
     + main.py: user interface, main project driver file
     + test_SVM.py: test file to verify class implementation of SVM outside of UI
     + test_DT.py: test file to verify class implementation of DT outside of UI
+
+Known issues when running main.py:
+    + not all model classes are implemented yet 
+    + UI not complete
+        - add an escape (like 'q') to quit early
+        - loop main so we can test more than one model/thing at a time
+
+TODO's: 
+    + complete UI in main.py
+    + implement the SVM render
+    + probably should only create one subfolder under the model folder with the 
+    model name, in this folder there should be a trained model file, a results file,
+    and a .png of the model render
+        - this will require changes to Utilities.utilities get/set file locations
+        - verify that we have covered all error checking necessary
+        - name the model <model_name> + "_model.pkl"
+    + add coefficient correlation script for selecting SVM columns
+    + implement warm_start on models so we can do incremental training
+

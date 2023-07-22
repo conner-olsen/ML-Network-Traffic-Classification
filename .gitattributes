@@ -1,5 +1,2 @@
 # Auto detect text files and perform LF normalization
 * text=auto
-Data/datasets/CIDDS_Internal_test.csv/ filter=lfs diff=lfs merge=lfs -text
-Data/datasets/CIDDS_Internal_train.csv filter=lfs diff=lfs merge=lfs -text
-*.csv filter=lfs diff=lfs merge=lfs -text
