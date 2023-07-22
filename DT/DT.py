@@ -32,40 +32,6 @@ class DT:
         """
         return self.model_name
 
-    @staticmethod
-    def prepare_data(df, attributes, length=-1):
-        """
-        Prepare data for training
-
-        Note: May be irrelevant, @Corey adjust as needed for the changes
-
-        :param df: "Data frame" Data loaded from csv
-        :param attributes: Data headers to normalize into integer values
-        :param length: Length of data to prepare
-        :return:
-            x, y (tuple):
-                x = Samples
-                Y = Labels
-        """
-        if length > 0:
-            df = df.iloc[:length]
-
-        # Convert 'Bytes' column to numeric, setting non-numeric values to NaN
-        df['Bytes'] = pd.to_numeric(df['Bytes'], errors='coerce')
-        df['Bytes'] = df['Bytes'].fillna(0)  # Fill NaN values with 0
-
-        # Factorize categorical features to integer labels
-        for col in attributes:
-            df[col], _ = pd.factorize(df[col])
-
-        x = df.drop(columns=['Label'])
-        y = df['Label']
-
-        # Debug print
-        print(str(len(df)) + " examples in dataset")
-
-        return x, y
-
     def train_model(self, x, y):
         """
         Fit wrapper function
@@ -108,3 +74,37 @@ class DT:
                                         class_names=class_names, filled=True)
         graph = graphviz.Source(dot_data, format="png")
         graph.render("DT/" + self.model_name + "/_dt", view=True)
+
+
+def prepare_data(df, attributes, length=-1):
+    """
+    Prepare data for training
+
+    Note: May be irrelevant, @Corey adjust as needed for the changes
+
+    :param df: "Data frame" Data loaded from csv
+    :param attributes: Data headers to normalize into integer values
+    :param length: Length of data to prepare
+    :return:
+        x, y (tuple):
+            x = Samples
+            Y = Labels
+    """
+    if length > 0:
+        df = df.iloc[:length]
+
+    # Convert 'Bytes' column to numeric, setting non-numeric values to NaN
+    df['Bytes'] = pd.to_numeric(df['Bytes'], errors="coerce")
+    df['Bytes'] = df['Bytes'].fillna(0)  # Fill NaN values with 0
+
+    # Factorize categorical features to integer labels
+    for col in attributes:
+        df[col], _ = pd.factorize(df[col])
+
+    x = df.drop(columns=['Label'])
+    y = df['Label']
+
+    # Debug print
+    print(str(len(df)) + " examples in dataset")
+
+    return x, y

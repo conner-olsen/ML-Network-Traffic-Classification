@@ -20,7 +20,7 @@ attributes = ['Duration', 'Src_IP', 'Src_Pt', 'Dst_Pt', 'Packets', 'Flags']
 def test_DT():
     dt_model = DT('dt_test')
     df = load_dataset(train_filename)
-    x, y = dt_model.prepare_data(df, attributes)
+    x, y = prepare_data(df, attributes)
     x_train = x.iloc[:30000]    # demo train subset
     y_train = y.iloc[:30000]
     print("new x len" + str(len(x_train)))

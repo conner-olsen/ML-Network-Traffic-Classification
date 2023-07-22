@@ -14,6 +14,7 @@ import time
 import joblib
 import pandas as pd
 
+from PyQt6.QtWidgets import QApplication, QMainWindow
 from DT.DT import DT
 from Data.DataPrep import DataPrep
 from SVM.SVM import SVM
@@ -74,7 +75,7 @@ def k_fold_train_and_validate(k, model_type, filename, model_obj, data_length=0)
     :return: None. Saves model and results to model folder.
     """
     df = load_dataset(filename)
-    x, y = model_obj.prepare_data(df, attributes, data_length)
+    x, y = prepare_data(df, attributes, data_length)
 
     size = int(len(x) / k)
     print("k-size:" + str(size))
@@ -255,6 +256,8 @@ def main():
     Main function to control program flow.
     """
 
+    app = QApplication([])
+
     # BEGIN CLEANING/NORMALIZATION/TRAIN AND TEST SPLIT OF RAW DATA
 
     # INSTANTIATE THE DATAPREP CLASS
@@ -296,14 +299,14 @@ def main():
 
     if opt == 0:  # train
         df = load_dataset(train_filename)
-        x, y = model.prepare_data(df, attributes, length)
+        x, y = prepare_data(df, attributes, length)
         trained_model = train(x, y, model, model_type)
         render(model, trained_model, x, y)
     elif opt == 1:  # cross validation routine
         k_fold_train_and_validate(10, model_type, train_filename, model, length)
     else:  # test
         df = load_dataset(test_filename)
-        x, y = model.prepare_data(df, attributes, length)
+        x, y = prepare_data(df, attributes, length)
         try:
             load_saved_model(model_type, model_name)
             test(x, y, model_type, model)
