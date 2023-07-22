@@ -1,16 +1,80 @@
 # Default ignored files
 /shelf/
 /workspace.xml
+
 # Editor-based HTTP Client requests
 /httpRequests/
+
 # Datasource local storage ignored files
 /dataSources/
 /dataSources.local.xml
 
+# Python
+**/__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+**/$py.class
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Pytest
+.pytest_cache/
+
+# PyCharm
 .idea
-.DS_Store
-Data/.DS_Store
-Data/datasets/CIDDS_Internal_test.csv
-Data/datasets/CIDDS_Internal_train.csv
-Data/.DS_Store
-.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Mac
+**/.DS_Store
+
+# Training data
+Data/datasets/CIDDS/
+
+# Log files
+*.log
+
+# Environment files
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Cython debug symbols
+cython_debug/
