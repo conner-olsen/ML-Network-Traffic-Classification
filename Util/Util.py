@@ -1,6 +1,6 @@
 import os
+
 import pandas as pd
-import time
 
 
 def get_results_location(models_folder, model_name: str):

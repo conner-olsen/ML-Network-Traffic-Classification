@@ -1,10 +1,12 @@
-from Util.Util import *
+
 
 from sklearn.metrics import accuracy_score, \
     confusion_matrix, \
     precision_score, \
     recall_score, \
     f1_score
+
+from Util.Util import get_results_location
 
 
 def evaluate_model(x_test, y_test, models_folder, model_name: str, predictions):

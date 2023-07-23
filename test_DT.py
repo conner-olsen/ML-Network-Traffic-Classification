@@ -8,9 +8,9 @@
 
     file to test implementation and integration of the DT class
 """
-from DT.DT import DT
-from Utilities.eval import evaluate_model
-from Utilities.prepare_data import load_dataset
+from Models.DT import DT
+from Util.Eval import evaluate_model
+from Util.Util import load_dataset, prepare_data
 
 DATA_ROOT = "Data/datasets/CIDDS/"
 train_filename = DATA_ROOT + "training/CIDDS_Internal_train.csv"

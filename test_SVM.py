@@ -1,4 +1,4 @@
-#test_SVM.py
+# test_SVM.py
 
 """
     author: em
@@ -8,13 +8,14 @@
 
     file to test class implementation and integration for svm model
 """
-from SVM.SVM import SVM
-from Utilities.eval import evaluate_model
-from Utilities.prepare_data import load_dataset
+from Models.SVM import SVM
+from Util.Eval import evaluate_model
+from Util.Util import load_dataset
 
 DATA_ROOT = "Data/datasets/CIDDS/"
 train_filename = DATA_ROOT + "training/CIDDS_Internal_train.csv"
 attributes = ['Duration', 'Src_IP', 'Src_Pt', 'Dst_Pt', 'Packets', 'Flags']
+
 
 def main():
     attr = ['Dst_Pt', 'Src_IP', 'Bytes', 'Label']    # subset of attr to train on
