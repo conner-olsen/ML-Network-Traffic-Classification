@@ -31,5 +31,5 @@ def test_DT():
     print("test len:" + str(len(x_test)))
     predict_dt = dt_model.test_model(x_test)
     print("model tested!")
-    evaluate_model(x_test, y_test, "DT", dt_model.get_model_name(), predict_dt)
+    dt_model.evaluate(x_test, y_test, predict_dt)
     dt_model.render_model(trained_dt, x_train, y_train)

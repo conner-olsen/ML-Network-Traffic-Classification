@@ -1,0 +1,25 @@
+known issues when running main.py:
+    + not all model classes are implemented yet 
+    + UI not complete
+        - add an escape (like 'q') to quit early
+        - loop main so we can test more than one model/thing at a time
+
+TODO's: 
+    + complete UI in main.py
+    + implement the SVM render
+    + probably should only create one subfolder under the model folder with the 
+    model name, in this folder there should be a trained model file, a results file,
+    and a .png of the model render
+        - this will require changes to Utilities.utilities get/set file locations
+        - verify that we have covered all error checking necessary
+        - name the model <model_name> + "_model.pkl"
+    + add coefficient correlation script for selecting SVM columns
+    + implement warm_start on models so we can do incremental training
+        -can any of these models benefit from warm start?
+        - if not, remove option to load a saved model when training
+    + add error when trying to load the processed data file if it doesn't exist
+    + note about joblib.dump: "Consider signing data with hmac if you need to ensure 
+      that it has not been tampered with." This would be a good add in the future, in
+      order to make it a legitimate sec product (if that is something ppl want to pursue)
+      https://docs.python.org/3/library/hmac.html#module-hmac
+    
