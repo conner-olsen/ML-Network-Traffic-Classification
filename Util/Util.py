@@ -8,33 +8,33 @@ def get_results_location(models_folder, model_name: str):
     Get the location of the results file for saving test results.
     If folder and file do not exist, they are created.
 
-    :param models_folder: the type of model we are training - this decides where the trained model is saved
+    :param models_folder: The type of model we are training - this decides where the trained model is saved
     :param model_name: the name of the file to save the model to
     :type model_name: str
-    :return: the location of the results file
+    :return: the location of the result's file
     :rtype: str
     """
-    location = os.path.join(models_folder + '/results/', model_name)
+    location = os.path.join(models_folder + "/results/", model_name)
     os.makedirs(location, exist_ok=True)
-    return os.path.join(location, 'results.txt')
+    return os.path.join(location, "results.txt")
 
 
 def get_model_location(models_folder, model_name: str):
     """
-    Retrieves path to a saved model in the format
+    Retrieves a path to a saved model in the format
     <models_folder>/models/<model_name>/model.pkl
     from current directory (should be called from main).
 
     :param models_folder:
-    :param model_name: a sub-folder in <model type>/models/ to <model name>
+    :param model_name: A sub-folder in <model type>/models/ to <model name>
     :type model_name: str
     :return: the relative path to the model from current dir, None if model does not exist
     :rtype: str
     """
-    location = os.path.join(models_folder+"/models/", model_name)
-    if os.path.isfile(os.path.join(location, 'model.pkl')):
+    location = os.path.join(models_folder + "/models/", model_name)
+    if os.path.isfile(os.path.join(location, "model.pkl")):
         os.makedirs(location, exist_ok=True)
-        return os.path.join(location, 'model.pkl')
+        return os.path.join(location, "model.pkl")
     else:
         print("file does not exist")
         return None
@@ -51,9 +51,9 @@ def set_model_location(models_folder, model_name):
     :return: relative path to the folder from project root
     :rtype: str
     """
-    location = os.path.join(models_folder+"/models/", model_name)
+    location = os.path.join(models_folder + "/models/", model_name)
     os.makedirs(location, exist_ok=True)
-    return os.path.join(location, 'model.pkl')
+    return os.path.join(location, "model.pkl")
 
 
 def load_dataset(filename):
@@ -86,15 +86,15 @@ def prepare_data(df, attributes, length=-1):
         df = df.iloc[:length]
 
     # Convert 'Bytes' column to numeric, setting non-numeric values to NaN
-    df['Bytes'] = pd.to_numeric(df['Bytes'], errors="coerce")
-    df['Bytes'] = df['Bytes'].fillna(0)  # Fill NaN values with 0
+    df["Bytes"] = pd.to_numeric(df["Bytes"], errors="coerce")
+    df["Bytes"] = df["Bytes"].fillna(0)  # Fill NaN values with 0
 
     # Factorize categorical features to integer labels
     for col in attributes:
         df[col], _ = pd.factorize(df[col])
 
-    x = df.drop(columns=['Label'])
-    y = df['Label']
+    x = df.drop(columns=["Label"])
+    y = df["Label"]
 
     # Debug print
     print(str(len(df)) + " examples in dataset")

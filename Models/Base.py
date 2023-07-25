@@ -40,7 +40,7 @@ class AbstractModel:
         Test DT model
 
         :param x: Test data
-        :return: Return from SVC predict function
+        :return: Return from SVC predicts function
         """
 
         return self.model.predict(x)

@@ -9,7 +9,6 @@
     file to test implementation and integration of the DT class
 """
 from Models.DT import DT
-from Util.Eval import evaluate_model
 from Util.Util import load_dataset, prepare_data
 
 DATA_ROOT = "Data/datasets/CIDDS/"
@@ -17,7 +16,7 @@ train_filename = DATA_ROOT + "training/CIDDS_Internal_train.csv"
 attributes = ['Duration', 'Src_IP', 'Src_Pt', 'Dst_Pt', 'Packets', 'Flags']
 
 
-def test_DT():
+def test_dt():
     dt_model = DT('dt_test')
     df = load_dataset(train_filename)
     x, y = prepare_data(df, attributes)
