@@ -1,5 +1,5 @@
-from FKM.FKM import *
-from Utilities.prepare_data import load_dataset
+from Models.FKM import *
+from Util.Util import load_dataset
 
 filename = "Data/datasets/CIDDS/training/CIDDS_Internal_train.csv"
 

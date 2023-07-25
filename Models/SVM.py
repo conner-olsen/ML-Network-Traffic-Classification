@@ -9,6 +9,7 @@ from sklearn.metrics import accuracy_score, \
                             f1_score
 from Util.Util import get_results_location
 
+
 class SVM(AbstractModel, ABC):
     def __init__(self, attributes, k_type, d=3, c=0.0, v=True,
                  cache=8000, model_name: str = 'default'
