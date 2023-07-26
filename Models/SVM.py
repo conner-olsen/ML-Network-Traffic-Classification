@@ -15,10 +15,10 @@ from Util.Util import get_results_location
 class SVM(AbstractModel, ABC):
     def __init__(
         self,
-        attributes,
-        k_type,
+        attributes=None,
+        k_type="rbf",
         d=3,
-        c=0.0,
+        c=1.0,
         v=True,
         cache=8000,
         model_name: str = "default",
@@ -35,12 +35,14 @@ class SVM(AbstractModel, ABC):
         :param c: regularization parameter
         :type c: float
         :param v: verbose (good for debugging)
-        :type v: bool
+        :type v: bool™£
         :param cache: cache size (bytes)
         :type cache: int
         :param model_name: name of the SVM being trained
         :type model_name: str
         """
+        if attributes is None:
+            attributes = ["Dst_Pt", "Src_IP", "Bytes", "Label"]
         self.model_name = model_name
         self.attributes = attributes
         self.model = SVC(

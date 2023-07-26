@@ -55,12 +55,12 @@ class KM(AbstractModel):
 
         :param df: The whole, pre-processed dataframe (samples and target)
         :type df: dataframe
-        :returns: X (dataframe): the samples (train or test), y (dataframe): the targets (train or test)
+        :returns: x (dataframe): the samples (train or test), y (dataframe): the targets (train or test)
         """
-        X = df.drop(columns=["Label"])
+        x = df.drop(columns=["Label"])
         y = df["Label"]
 
-        return X, y
+        return x, y
 
     def train_model(self, x_train, y_train):
         """
