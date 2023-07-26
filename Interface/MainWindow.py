@@ -1,8 +1,18 @@
 import json
 import os
 
-from PyQt6.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QFileDialog, QPushButton, \
-    QLabel, QComboBox, QStackedWidget, QLineEdit
+from PyQt6.QtWidgets import (
+    QMainWindow,
+    QWidget,
+    QHBoxLayout,
+    QVBoxLayout,
+    QFileDialog,
+    QPushButton,
+    QLabel,
+    QComboBox,
+    QStackedWidget,
+    QLineEdit,
+)
 
 from Models.DT import DT
 from Models.SVM import SVM
@@ -27,13 +37,19 @@ from Util.Util import (
     prepare_data,
 )
 
-DATA_ROOT = "Data/datasets/CIDDS/"
+DATA_ROOT = "Data/datasets/"
 raw_data_path = "Data/datasets/CIDDS/CIDDS-001/"
 train_filename = DATA_ROOT + "training/CIDDS_Internal_train.csv"
 test_filename = DATA_ROOT + "testing/CIDDS_Internal_test.csv"
+resample_test_filename = DATA_ROOT + "testing/CIDDS_Internal_test_resample_strings.csv"
+resample_train_filename = (
+    DATA_ROOT + "training/CIDDS_Internal_train_resample_strings.csv"
+)
 MODEL_ROOT = ["DT", "FKM", "SVM", "TACGAN"]
 opts = ["TRAIN", "K-FOLD TRAIN & VALIDATE", "TEST"]
-attributes = ["Duration", "Src_IP", "Src_Pt", "Dst_Pt", "Packets", "Flags"]
+attributes = ["Duration", "Src_IP", "Src_Pt", "Dst_Pt", "Packets", "Flags", "Label"]
+default_svm_attr = ["Dst_Pt", "Src_IP", "Bytes", "Label"]
+default_attr = ["Duration", "Src_IP", "Src_Pt", "Dst_Pt", "Packets", "Flags", "Label"]
 parallel = joblib.Parallel(n_jobs=2, prefer="threads")
 
 
@@ -44,7 +60,7 @@ def k_fold_xy(x, y, idx, size):
 
     :param x: The prepared data to be partitioned.
     :param y: The prepared labels to be partitioned.
-    :param idx: k-val * iteration.
+    :param idx: K-val * iteration.
     :param size: Size of each k-subset.
     :return: Divided data/labels for train and validate cycle (&evaluate).
     """
@@ -234,7 +250,9 @@ class MainWindow(QMainWindow):
         try:
             with open("settings.json", "r") as f:
                 self.settings = json.load(f)
-                self.selected_file_label.setText(os.path.basename(self.settings["training_data"]))
+                self.selected_file_label.setText(
+                    os.path.basename(self.settings["training_data"])
+                )
         except FileNotFoundError:
             print("File 'settings.json' not found")
         except json.JSONDecodeError:
@@ -313,14 +331,20 @@ class MainWindow(QMainWindow):
         self.stacked_widget.setCurrentIndex(0)
 
     def make_model(self):
+        """
+        Make the model object based on the selected model type
+        :return: None
+        """
+        global attributes
         self.length = -1
         model_type = self.model_type.currentText()
 
+        attributes = default_attr
         if model_type == "DT":
             self.model = DT(self.output_textbox.text())
         elif model_type == "SVM":
-            dflt_svm_attr = ["Dst_Pt", "Src_IP", "Bytes", "Label"]
-            self.model = SVM(dflt_svm_attr, self.output_textbox.text())
+            attributes = default_svm_attr
+            self.model = SVM(attributes, self.output_textbox.text())
             # length = 50000 #demo length - SVM training is long
         elif model_type == "FKM":
             self.convert_str = False
@@ -334,14 +358,14 @@ class MainWindow(QMainWindow):
             return
 
     def prepare_data(self):
-        make_model()
+        self.make_model()
 
-        ## BEGIN CLEANING/NORMALIZATION/TRAIN AND TEST SPLIT OF RAW DATA
+        # BEGIN CLEANING/NORMALIZATION/TRAIN AND TEST SPLIT OF RAW DATA
 
-        ## INSTANTIATE THE DATAPREP CLASS
+        # INSTANTIATE THE DATAPREP CLASS
         data_opt = DataPrep(raw_data_path, DATA_ROOT)
 
-        ## IF USER HAS A RAW CSV TO PARSE
+        # IF USER HAS A RAW CSV TO PARSE
         data_opt.set_raw_dir()
 
         if data_opt.get_raw_dir():
@@ -356,38 +380,42 @@ class MainWindow(QMainWindow):
         df = load_dataset(train_filename)
         x, y = prepare_data(df, attributes, self.length)
         trained_model = train(x, y, self.model, self.model_type.currentText())
-        self.render(self.model, trained_model, x, y)
+        render(self.model, trained_model, x, y)
 
     def go_to_validating_page(self):
         self.stacked_widget.setCurrentIndex(2)
 
         self.make_model()
 
-        k_fold_train_and_validate(10, self.model_type.currentText(), train_filename, self.model, length)
+        k_fold_train_and_validate(
+            10, self.model_type.currentText(), train_filename, self.model, self.length
+        )
 
     def go_to_testing_page(self):
         self.stacked_widget.setCurrentIndex(3)
 
         self.make_model()
 
-        if resample:
+        if self.resample:
             df = load_dataset(resample_test_filename)
         else:
             df = load_dataset(test_filename)
-        x, y = self.model.prepare_data(df, attributes, length)
+        x, y = prepare_data(df, attributes, self.length)
         try:
-            trained_model = load_saved_model(self.model_type.currentText(), model_name)
-            test(x, y, model_type, self.model)
-        except:
+            # trained_model = load_saved_model(self.model_type.currentText(), model_name)
+            test(x, y, self.model_type.currentText(), self.model)
+        except FileNotFoundError:
             print("cannot load model for testing")
 
     def open_file_dialog(self):
-        file_name, _ = QFileDialog.getOpenFileName(self, "Open Training Data", "", "CSV files (*.csv)")
+        file_name, _ = QFileDialog.getOpenFileName(
+            self, "Open Training Data", "", "CSV files (*.csv)"
+        )
         if file_name:
             self.selected_file_label.setText(os.path.basename(file_name))
             with open("settings.json", "w") as f:
                 json.dump({"training_data": file_name}, f)
 
     def closeEvent(self, event):
-        with open('settings.json', 'w') as f:
+        with open("settings.json", "w") as f:
             json.dump(self.settings, f)

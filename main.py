@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import QApplication
 
 from Interface.MainWindow import MainWindow
 
+
 # **********************************************************
 def main():
     """
@@ -27,7 +28,6 @@ def main():
     window.show()
 
     sys.exit(app.exec())
-
 
     # BEGIN SELECTION OF MODELS - model type may impact data processing
     opt = train_or_test()
@@ -106,7 +106,7 @@ def main():
         try:
             trained_model = load_saved_model(model_type, model_name)
             test(x, y, model_type, model)
-        except:
+        except FileNotFoundError:
             print("cannot load model for testing")
     elif opts[opt] == "PROCESS DATA":
         print("Data files ready")

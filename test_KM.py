@@ -1,5 +1,3 @@
-#test_FM.py
-
 """
     author: em
     project: group 7
@@ -22,31 +20,31 @@ TRAIN_FULL = False
 
 
 def main():
-    k = 5           #num clusters
+    k = 5  # num clusters
 
     df = pd.read_csv(filename)
 
     km_model = KM(k, "testKM")
     print(km_model.get_model_name())
 
-    X, y = km_model.prepare_data(df)
+    x, y = km_model.prepare_data(df)
 
     # full train set
     if TRAIN_FULL:
-        x_train, x_test, y_train,  y_test = train_test_split(X, y, test_size=.33)
+        x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.33)
     else:
         # train /test a subset
-        x_train = X.iloc[:20000]
+        x_train = x.iloc[:20000]
         y_train = y.iloc[:20000]
-        x_test = X.iloc[20000:30000]
+        x_test = x.iloc[20000:30000]
         y_test = y.iloc[20000:30000]
 
     scaler = RobustScaler()
     scaler.fit_transform(x_train)
     scaler.transform(x_test)
-    
+
     print("training...")
-    
+
     start = time.time()
     trained = km_model.train_model(x_train, y_train)
     train_time = time.time() - start

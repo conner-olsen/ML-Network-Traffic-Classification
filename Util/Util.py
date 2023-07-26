@@ -68,22 +68,28 @@ def load_dataset(filename):
     return df
 
 
-def prepare_data(df, attributes, length=-1):
+def prepare_data(df, attributes=None, length=-1):
     """
     Prepare data for training
 
     Note: May be irrelevant, @Corey adjust as needed for the changes
 
     :param df: "Data frame" Data loaded from csv
-    :param attributes: Data headers to normalize into integer values
+    :param attributes: Data headers to normalize into integer values SVM: ["Dst_Pt", "Src_IP", "Bytes", "Label"]
     :param length: Length of data to prepare
     :return:
         x, y (tuple):
             x = Samples
-            Y = Labels
+            y = Labels
     """
     if length > 0:
         df = df.iloc[:length]
+
+    if attributes is not None:
+        df = df[attributes]
+
+    # convert Flags column to numeric via factorize
+    df.loc[:, "Flags"] = pd.factorize(df["Flags"])[0]
 
     x = df.drop(columns=["Label"])
     y = df["Label"]
