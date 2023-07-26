@@ -85,18 +85,10 @@ def prepare_data(df, attributes, length=-1):
     if length > 0:
         df = df.iloc[:length]
 
-    # Convert 'Bytes' column to numeric, setting non-numeric values to NaN
-    df["Bytes"] = pd.to_numeric(df["Bytes"], errors="coerce")
-    df["Bytes"] = df["Bytes"].fillna(0)  # Fill NaN values with 0
-
-    # Factorize categorical features to integer labels
-    for col in attributes:
-        df[col], _ = pd.factorize(df[col])
-
     x = df.drop(columns=["Label"])
     y = df["Label"]
 
-    # Debug print
+    # debug print
     print(str(len(df)) + " examples in dataset")
 
     return x, y

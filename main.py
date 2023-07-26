@@ -273,7 +273,7 @@ def main():
     model = None
     length = -1  # default to use full dataset in training/testing
 
-    ## BEGIN SELECTION OF MODELS - model type may impact data processing
+    # BEGIN SELECTION OF MODELS - model type may impact data processing
     opt = train_or_test()
     if opts[opt] == "QUIT":
         print("quitting application...")
@@ -285,7 +285,7 @@ def main():
         model_type = get_model_type()
 
         # get the model name to work with (may exist, if not model obj will be named)
-        model_name = get_model_name(model_type, opt)
+        model_name = get_model_name(model_type)
 
         if model_type == "DT":
             model = DT(model_name)
@@ -305,12 +305,12 @@ def main():
             return
     # TODO: add FKM and TACGAN
 
-    ## BEGIN CLEANING/NORMALIZATION/TRAIN AND TEST SPLIT OF RAW DATA
+    # BEGIN CLEANING/NORMALIZATION/TRAIN AND TEST SPLIT OF RAW DATA
 
-    ## INSTANTIATE THE DATAPREP CLASS
+    # INSTANTIATE THE DATAPREP CLASS
     data_opt = DataPrep(raw_data_path, DATA_ROOT)
 
-    ## IF USER HAS A RAW CSV TO PARSE
+    # IF USER HAS A RAW CSV TO PARSE
     data_opt.set_raw_dir()
 
     if data_opt.get_raw_dir():
@@ -324,10 +324,10 @@ def main():
         )
         resample = input("would you like to balance the dataset? (y/n): ") == "y"
 
-        ## BEGIN PARSING THE DATA
+        # BEGIN PARSING THE DATA
         data_opt.set_parse_data(convert_strings=convert_str)
 
-        ## BEGIN SPLITTING THE DATA
+        # BEGIN SPLITTING THE DATA
         data_opt.split_data(resample=resample)
 
     # Train, k-folds, or test
