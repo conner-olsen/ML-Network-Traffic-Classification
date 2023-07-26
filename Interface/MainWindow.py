@@ -197,7 +197,10 @@ class MainWindow(QMainWindow):
         self.model_type = None
         self.resample = True
         self.convert_str = False
+        self.trained_model = None
         self.model = None
+        self.samples = None
+        self.labels = None
         self.length = -1
         self.selected_file_label = None
         self.file_dialog = None
@@ -276,6 +279,9 @@ class MainWindow(QMainWindow):
     def create_training_page(self):
         layout = QVBoxLayout()
         layout.addWidget(QLabel("Training Page"))
+        render_button = QPushButton("Render")
+        render_button.clicked.connect(self.render_trained)
+        layout.addWidget(render_button)
         back_button = QPushButton("Back to Main Menu")
         back_button.clicked.connect(self.go_to_main_menu)
         layout.addWidget(back_button)
@@ -296,6 +302,9 @@ class MainWindow(QMainWindow):
         widget.setLayout(layout)
 
         self.stacked_widget.addWidget(widget)
+
+    def render_trained(self):
+        self.render(self.model, self.trained_model, self.samples, self.labels)
 
     def create_testing_page(self):
         layout = QVBoxLayout()
@@ -354,9 +363,9 @@ class MainWindow(QMainWindow):
         self.make_model()
 
         df = load_dataset(train_filename)
-        x, y = prepare_data(df, attributes, self.length)
-        trained_model = train(x, y, self.model, self.model_type.currentText())
-        self.render(self.model, trained_model, x, y)
+        self.samples, self.labels = prepare_data(df, attributes, self.length)
+        self.trained_model = train(self.samples, self.labels, self.model, self.model_type.currentText())
+        #self.render(self.model, trained_model, x, y)
 
     def go_to_validating_page(self):
         self.stacked_widget.setCurrentIndex(2)
