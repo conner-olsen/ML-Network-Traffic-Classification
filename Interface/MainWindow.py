@@ -322,7 +322,7 @@ class MainWindow(QMainWindow):
         self.stacked_widget.addWidget(widget)
 
     def render_trained(self):
-        self.render(self.model, self.trained_model, self.samples, self.labels)
+        self.model.render_model(self.trained_model, self.samples, self.labels)
 
     def create_testing_page(self):
         layout = QVBoxLayout()
@@ -386,7 +386,7 @@ class MainWindow(QMainWindow):
 
         self.make_model()
 
-        df = load_dataset(train_filename)
+        df = load_dataset(self.settings["training_data"])
         
         self.samples, self.labels = prepare_data(df, attributes, self.length)
         self.trained_model = train(self.samples, self.labels, self.model, self.model_type.currentText())
@@ -398,7 +398,7 @@ class MainWindow(QMainWindow):
         self.make_model()
 
         k_fold_train_and_validate(
-            10, self.model_type.currentText(), train_filename, self.model, self.length
+            10, self.model_type.currentText(), self.settings["training_data"], self.model, self.length
         )
 
     def go_to_testing_page(self):
