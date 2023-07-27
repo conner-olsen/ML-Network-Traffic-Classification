@@ -91,9 +91,7 @@ class DataPrep:
 
         while loop:
 
-            new_data = input(
-                "\nAre you starting with raw/un-parsed csv files?: (y/n) "
-            ).lower()
+            new_data = "y"
 
             if new_data == "y" or new_data == "yes":
                 print("\n")
@@ -167,7 +165,7 @@ class DataPrep:
         #     'Data/datasets/CIDDS/CIDDS-001/CIDDS-001-internal-week1.csv']  # Temporary...remove after testing
 
         for i in self._raw_files:
-            print(f"Parsing data from Week{counter} of 4...")
+            print(f"Parsing data from Week {counter} of 4...")
             df = pd.read_csv(i, low_memory=False)
 
             # DROP COLUMNS

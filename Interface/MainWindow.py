@@ -45,7 +45,7 @@ resample_test_filename = DATA_ROOT + "testing/CIDDS_Internal_test_resample_strin
 resample_train_filename = (
     DATA_ROOT + "training/CIDDS_Internal_train_resample_strings.csv"
 )
-MODEL_ROOT = ["DT", "FKM", "SVM", "TACGAN"]
+MODEL_ROOT = ["DT", "FKM", "SVM", "KM"]
 opts = ["TRAIN", "K-FOLD TRAIN & VALIDATE", "TEST"]
 attributes = ["Duration", "Src_IP", "Src_Pt", "Dst_Pt", "Packets", "Flags", "Label"]
 default_svm_attr = ["Dst_Pt", "Src_IP", "Bytes", "Label"]
@@ -136,7 +136,7 @@ def render(model_obj, trained_model, x_train, y_train):
     :param x_train: Training data.
     :param y_train: Training labels.
     """
-    render_model = input("render model? (y/n): ")
+    render_model = "y"
     if render_model == "y":
         model_obj.render_model(trained_model, x_train, y_train)
 
@@ -238,7 +238,7 @@ class MainWindow(QMainWindow):
 
         # ComboBox
         self.model_type = QComboBox()
-        self.model_type.addItems(["DT", "FKM", "SVM", "TACGAN"])
+        self.model_type.addItems(MODEL_ROOT)
         layout.addWidget(QLabel("Select the model type"))
         layout.addWidget(self.model_type)
 
@@ -296,7 +296,7 @@ class MainWindow(QMainWindow):
 
     def create_training_page(self):
         layout = QVBoxLayout()
-        layout.addWidget(QLabel("Training Page"))
+        layout.addWidget(QLabel("Training Complete"))
         render_button = QPushButton("Render")
         render_button.clicked.connect(self.render_trained)
         layout.addWidget(render_button)
@@ -311,7 +311,7 @@ class MainWindow(QMainWindow):
 
     def create_validating_page(self):
         layout = QVBoxLayout()
-        layout.addWidget(QLabel("Validating Page"))
+        layout.addWidget(QLabel("Complete"))
         back_button = QPushButton("Back to Main Menu")
         back_button.clicked.connect(self.go_to_main_menu)
         layout.addWidget(back_button)
@@ -326,7 +326,7 @@ class MainWindow(QMainWindow):
 
     def create_testing_page(self):
         layout = QVBoxLayout()
-        layout.addWidget(QLabel("Testing Page"))
+        layout.addWidget(QLabel("Complete"))
         back_button = QPushButton("Back to Main Menu")
         back_button.clicked.connect(self.go_to_main_menu)
         layout.addWidget(back_button)
@@ -387,10 +387,12 @@ class MainWindow(QMainWindow):
         self.make_model()
 
         df = load_dataset(self.settings["training_data"])
-        
+
         self.samples, self.labels = prepare_data(df, attributes, self.length)
-        self.trained_model = train(self.samples, self.labels, self.model, self.model_type.currentText())
-        #self.render(self.model, trained_model, x, y)
+        self.trained_model = train(
+            self.samples, self.labels, self.model, self.model_type.currentText()
+        )
+        # self.render(self.model, trained_model, x, y)
 
     def go_to_validating_page(self):
         self.stacked_widget.setCurrentIndex(2)
@@ -398,7 +400,11 @@ class MainWindow(QMainWindow):
         self.make_model()
 
         k_fold_train_and_validate(
-            10, self.model_type.currentText(), self.settings["training_data"], self.model, self.length
+            10,
+            self.model_type.currentText(),
+            self.settings["training_data"],
+            self.model,
+            self.length,
         )
 
     def go_to_testing_page(self):
