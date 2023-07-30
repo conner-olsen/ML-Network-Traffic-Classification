@@ -1,0 +1,6 @@
+Training Time: 8.658886194229126 seconds
+composition_: None
+homogeneity_: 0.0
+completeness_: 1.0
+v_measure_: 0.0
+accuracy_: 0.4990459876359998

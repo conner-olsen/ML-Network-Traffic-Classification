@@ -1,0 +1,7 @@
+Training Time: 13.039910078048706 seconds
+Accuracy: 0.5009793862512826
+Precision: 0.5009793862512826
+Recall: 0.5009793862512826
+F1 Score: 0.5009793862512826
+Confusion Matrix: [[59081     0]
+ [58850     0]]

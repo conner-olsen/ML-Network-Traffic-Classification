@@ -1,6 +1,21 @@
+"""
+    author: co
+    project: group 7 - term project
+    class: CS-534 Artificial Intelligence WPI
+    date: July 15, 2023,
+    last update: July 25, 2023
+
+    main file to control program flow
+"""
+import datetime
 import json
 import os
+import time
 
+import joblib
+import numpy as np
+import pandas as pd
+from PyQt6.QtCore import QThread, pyqtSignal, QTimer
 from PyQt6.QtWidgets import (
     QMainWindow,
     QWidget,
@@ -12,45 +27,42 @@ from PyQt6.QtWidgets import (
     QComboBox,
     QStackedWidget,
     QLineEdit,
+    QApplication,
 )
-
-from Models.DT import DT
-from Models.SVM import SVM
-from Util.Util import load_dataset, prepare_data
-
-import sys
-import time
-
-import joblib
-import pandas as pd
-from PyQt6.QtWidgets import QApplication
-
 from Data.DataPrep import DataPrep
 from Models.DT import DT
 from Models.SVM import SVM
-from Util.Eval import evaluate_model
+from Models.KM import KM
+from Models.FKM import FKM
 from Util.Util import (
     get_results_location,
-    set_model_location,
     get_model_location,
     load_dataset,
-    prepare_data,
 )
 
-DATA_ROOT = "Data/datasets/"
+DATA_ROOT = "Data/datasets/CIDDS/"
+TRAIN = "training/CIDDS_Internal_train"
+TEST = "testing/CIDDS_Internal_test"
 raw_data_path = "Data/datasets/CIDDS/CIDDS-001/"
-train_filename = DATA_ROOT + "training/CIDDS_Internal_train.csv"
-test_filename = DATA_ROOT + "testing/CIDDS_Internal_test.csv"
-resample_test_filename = DATA_ROOT + "testing/CIDDS_Internal_test_resample_strings.csv"
-resample_train_filename = (
-    DATA_ROOT + "training/CIDDS_Internal_train_resample_strings.csv"
-)
-MODEL_ROOT = ["DT", "FKM", "SVM", "KM"]
-opts = ["TRAIN", "K-FOLD TRAIN & VALIDATE", "TEST"]
-attributes = ["Duration", "Src_IP", "Src_Pt", "Dst_Pt", "Packets", "Flags", "Label"]
-default_svm_attr = ["Dst_Pt", "Src_IP", "Bytes", "Label"]
-default_attr = ["Duration", "Src_IP", "Src_Pt", "Dst_Pt", "Packets", "Flags", "Label"]
-parallel = joblib.Parallel(n_jobs=2, prefer="threads")
+
+strings_train_filename = DATA_ROOT + TRAIN + "_strings.csv"
+strings_test_filename = DATA_ROOT + TEST + "_strings.csv"
+
+whole_train_filename = DATA_ROOT + TRAIN + ".csv"
+whole_test_filename = DATA_ROOT + TEST + ".csv"
+
+resample_train_filename = DATA_ROOT + TRAIN + "_resample.csv"
+resample_test_filename = DATA_ROOT + TEST + "_resample.csv"
+
+strings_resample_train_filename = DATA_ROOT + TRAIN + "_resample_strings.csv"
+strings_resample_test_filename = DATA_ROOT + TEST + "_resample_strings.csv"
+
+
+MODEL_NAMES = ["DT", "SVM", "KM", "FKM"]
+opts = ["TRAIN", "K-FOLD TRAIN & VALIDATE", "TEST", "PROCESS DATA", "QUIT"]
+parallel = joblib.Parallel(n_jobs=-1, prefer="threads")
+resample = True
+convert_str = False
 
 
 def k_fold_xy(x, y, idx, size):
@@ -64,6 +76,10 @@ def k_fold_xy(x, y, idx, size):
     :param size: Size of each k-subset.
     :return: Divided data/labels for train and validate cycle (&evaluate).
     """
+    if isinstance(x, np.ndarray):
+        x = pd.DataFrame(x)
+    if isinstance(y, np.ndarray):
+        y = pd.Series(y)
 
     front_x = x.iloc[:idx, :]  # start at 0-test subset idx
     back_x = x.iloc[idx + size :, :]  # start after a set
@@ -81,94 +97,6 @@ def k_fold_xy(x, y, idx, size):
     return x_train, y_train, x_test, y_test
 
 
-# *********************************************************
-def k_fold_train_and_validate(k, model_type, filename, model_obj, data_length=0):
-    """
-    Perform cross-validation on dataset. Dataset is divided into k subsets,
-    with k-1 used to train, and 1 left to validate on.
-
-    :param data_length: Length of data to use (0 for all).
-    :param model_obj: Model object.
-    :param k: Number of subdivisions to make from the dataset.
-    :param model_type: Type of model to work with (from user selection).
-    :param filename: Data file to use for dataset.
-    :return: None. Saves model and results to model folder.
-    """
-    df = load_dataset(filename)
-    x, y = prepare_data(df, attributes, data_length)
-
-    size = int(len(x) / k)
-    print("k-size:" + str(size))
-
-    for i in range(k):
-        print("subset " + str(i + 1))
-        idx = i * size
-        x_train, y_train, x_test, y_test = k_fold_xy(x, y, idx, size)
-
-        # check for null, then show where it is
-        # this is just for debugging and to short circuit on bad data
-        # maybe should move this to preparing data?
-        value = x_train.isnull().sum().sum()
-        if value > 0:
-            print("null x vals: " + str(value))
-            for col in attributes:
-                num = x_train.isnull().sum()
-                print(str(num) + " null in " + col)
-            return
-
-        # train
-        trained_model = train(x_train, y_train, model_obj, model_type)
-
-        # testing
-        # load the saved training model
-        test(x_test, y_test, model_type, model_obj)
-
-        render(model_obj, trained_model, x_train, y_train)
-
-
-# ***********************************************************
-def render(model_obj, trained_model, x_train, y_train):
-    """
-    Ask before rendering.
-
-    :param model_obj: Model object.
-    :param trained_model: Trained model.
-    :param x_train: Training data.
-    :param y_train: Training labels.
-    """
-    render_model = "y"
-    if render_model == "y":
-        model_obj.render_model(trained_model, x_train, y_train)
-
-
-# **********************************************************
-def train(x, y, model, model_type):
-    """
-    Train the model on prepared dataset.
-
-    :param x: Training data.
-    :param y: Training labels.
-    :param model: Model object.
-    :param model_type: Type of model (where to save model).
-    :return: Trained model.
-    """
-    print("Training model...")
-
-    start_time = time.time()
-    trained_model = model.train_model(x, y)
-    training_time = time.time() - start_time
-    print(f"Training time: {training_time} seconds.")
-
-    # write training time to file
-    with open(get_results_location(model_type, model.model_name), "a") as f:
-        f.write(f"Training Time: {training_time} seconds\n")
-
-    # Save the trained model
-    joblib.dump(trained_model, set_model_location(model_type, model.model_name))
-
-    return trained_model
-
-
 # **************************************************************
 def test(x_test, y_test, model_type, model_obj):
     """
@@ -180,19 +108,23 @@ def test(x_test, y_test, model_type, model_obj):
     :param model_obj: Model object.
     :return: None. Saves evaluation data.
     """
-    trained_model = load_saved_model(model_type, model_obj.model_name)
-    model_obj.set_model(trained_model)
+    model_location = get_model_location(
+        models_folder=model_obj.model_type, model_name=model_obj.model_name
+    )
+    if model_location is not None and os.path.exists(model_location):
+        trained_model = load_saved_model(model_type, model_obj.model_name)
+        model_obj.model = trained_model
     predictions = model_obj.test_model(x_test)
-    evaluate_model(x_test, y_test, model_type, model_obj.model_name, predictions)
+    model_obj.evaluate(y_test, predictions)
 
 
 # ****************************************************************
 def load_saved_model(model_type, model_name):
     """
-    Load a saved model, if it exists.
+    Load a saved model if it exists.
 
     :param model_type: Type of model.
-    :param model_name: Name of model.
+    :param model_name: Name of a model.
     :return: Saved model or None if error.
     """
     try:
@@ -207,17 +139,36 @@ def load_saved_model(model_type, model_name):
 
 # noinspection PyUnresolvedReferences
 class MainWindow(QMainWindow):
+    """
+    Main window for the application.
+
+    :param QMainWindow: Main window.
+    :return: None
+    """
+
     def __init__(self):
+        """
+        Initialize the main window.
+
+        :return: None
+        """
         super().__init__()
-        self.settings = None
+        self.complete_label = None
+        self.is_done = False
+        self.timer = None
+        self.start_time = None
+        self.thread = None
+        self.threads = []
+        self.status_label = QLabel()
         self.model_type = None
         self.resample = True
         self.convert_str = False
-        self.trained_model = None
-        self.model = None
-        self.samples = None
-        self.labels = None
-        self.length = -1
+        self.model_obj = None
+        self.x_train = None
+        self.y_train = None
+        self.x_test = None
+        self.y_test = None
+        self.length = None
         self.selected_file_label = None
         self.file_dialog = None
         self.output_textbox = None
@@ -227,18 +178,21 @@ class MainWindow(QMainWindow):
 
         self.create_main_menu()
         self.create_training_page()
-        self.create_validating_page()
-        self.create_testing_page()
+        self.create_complete_page()
 
         # Set the stacked widget as the central widget
         self.setCentralWidget(self.stacked_widget)
 
     def create_main_menu(self):
+        """
+        Create the main menu page.
+        :return: None
+        """
         layout = QVBoxLayout()  # Main menu layout
 
         # ComboBox
         self.model_type = QComboBox()
-        self.model_type.addItems(MODEL_ROOT)
+        self.model_type.addItems(MODEL_NAMES)
         layout.addWidget(QLabel("Select the model type"))
         layout.addWidget(self.model_type)
 
@@ -249,22 +203,11 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.file_dialog)
         layout.addWidget(self.selected_file_label)
 
-        # Loading settings
-        try:
-            with open("settings.json", "r") as f:
-                self.settings = json.load(f)
-                self.selected_file_label.setText(
-                    os.path.basename(self.settings["training_data"])
-                )
-        except FileNotFoundError:
-            print("File 'settings.json' not found")
-        except json.JSONDecodeError:
-            print("Error decoding the JSON file")
-        except KeyError:
-            print("Key 'training_data' not found in the JSON file")
+        self.selected_file_label.setText(whole_train_filename)
 
         # Create a new QLineEdit widget
         self.output_textbox = QLineEdit()
+        self.output_textbox.setText("model_name")
 
         # Add the textbox to your layout
         layout.addWidget(self.output_textbox)
@@ -273,11 +216,11 @@ class MainWindow(QMainWindow):
         hbox = QHBoxLayout()
         prepare_button = QPushButton("Prepare")
         train_button = QPushButton("Training")
-        validate_button = QPushButton("Validating")
+        validate_button = QPushButton("K-Fold Validation")
         test_button = QPushButton("Testing")
 
         # Connect button click signals to the appropriate
-        prepare_button.clicked.connect(self.prepare_data)
+        prepare_button.clicked.connect(self.prepare_raw_data)
         train_button.clicked.connect(self.go_to_training_page)
         validate_button.clicked.connect(self.go_to_validating_page)
         test_button.clicked.connect(self.go_to_testing_page)
@@ -295,8 +238,12 @@ class MainWindow(QMainWindow):
         self.stacked_widget.addWidget(widget)  # Add widget to the stack
 
     def create_training_page(self):
+        """
+        Create the training page.`
+        :return: None
+        """
         layout = QVBoxLayout()
-        layout.addWidget(QLabel("Training Complete"))
+        layout.addWidget(self.status_label)
         render_button = QPushButton("Render")
         render_button.clicked.connect(self.render_trained)
         layout.addWidget(render_button)
@@ -309,9 +256,14 @@ class MainWindow(QMainWindow):
 
         self.stacked_widget.addWidget(widget)
 
-    def create_validating_page(self):
+    def create_complete_page(self):
+        """
+        Create the complete page.
+        :return: None
+        """
         layout = QVBoxLayout()
-        layout.addWidget(QLabel("Complete"))
+        self.complete_label = QLabel("Complete")
+        layout.addWidget(self.complete_label)
         back_button = QPushButton("Back to Main Menu")
         back_button.clicked.connect(self.go_to_main_menu)
         layout.addWidget(back_button)
@@ -322,21 +274,17 @@ class MainWindow(QMainWindow):
         self.stacked_widget.addWidget(widget)
 
     def render_trained(self):
-        self.model.render_model(self.trained_model, self.samples, self.labels)
-
-    def create_testing_page(self):
-        layout = QVBoxLayout()
-        layout.addWidget(QLabel("Complete"))
-        back_button = QPushButton("Back to Main Menu")
-        back_button.clicked.connect(self.go_to_main_menu)
-        layout.addWidget(back_button)
-
-        widget = QWidget()
-        widget.setLayout(layout)
-
-        self.stacked_widget.addWidget(widget)
+        """
+        Render the trained model.
+        :return: None
+        """
+        self.model_obj.render_model(self.x_train, self.y_train)
 
     def go_to_main_menu(self):
+        """
+        Go to the main menu.
+        :return: None
+        """
         self.stacked_widget.setCurrentIndex(0)
 
     def make_model(self):
@@ -344,31 +292,45 @@ class MainWindow(QMainWindow):
         Make the model object based on the selected model type
         :return: None
         """
-        global attributes
         self.length = -1
         model_type = self.model_type.currentText()
 
-        attributes = default_attr
         if model_type == "DT":
-            self.model = DT(self.output_textbox.text())
+            self.model_obj = DT(self.output_textbox.text())
         elif model_type == "SVM":
-            attributes = default_svm_attr
-            self.model = SVM(attributes, self.output_textbox.text())
-            # length = 50000 #demo length - SVM training is long
+            self.model_obj = SVM(model_name=self.output_textbox.text())
         elif model_type == "FKM":
-            self.convert_str = False
-            self.resample = False
-            print("not implemented yet")
-        elif model_type == "TACGAN":
-            print("not implemented yet")
-            return
+            self.model_obj = FKM(model_name=self.output_textbox.text())
+        elif model_type == "KM":
+            self.model_obj = KM(model_name=self.output_textbox.text())
         else:
             print("invalid option, exiting application")
-            return
 
-    def prepare_data(self):
+    def prepare_raw_data(self):
+        """
+        Prepare the raw data.
+        :return: None
+        """
+        self.stacked_widget.setCurrentIndex(2)
+        self.is_done = False
         self.make_model()
 
+        # Start the timer
+        self.start_time = datetime.datetime.now()
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_timer)
+        self.timer.start(1000)  # update every second
+
+        self.thread = WorkerThread(lambda: self.run_prepare())
+        self.thread.task_done.connect(self.on_task_done)
+        self.thread.start()
+        time.sleep(0.1)
+
+    def run_prepare(self):
+        """
+        Run the prepare function in a new thread.
+        :return: None
+        """
         # BEGIN CLEANING/NORMALIZATION/TRAIN AND TEST SPLIT OF RAW DATA
 
         # INSTANTIATE THE DATAPREP CLASS
@@ -381,49 +343,77 @@ class MainWindow(QMainWindow):
             data_opt.set_parse_data(self.convert_str)
             data_opt.split_data(self.resample)
 
-    def go_to_training_page(self):
-        self.stacked_widget.setCurrentIndex(1)
-
-        self.make_model()
-
-        df = load_dataset(self.settings["training_data"])
-
-        self.samples, self.labels = prepare_data(df, attributes, self.length)
-        self.trained_model = train(
-            self.samples, self.labels, self.model, self.model_type.currentText()
-        )
-        # self.render(self.model, trained_model, x, y)
+        self.is_done = True
+        self.update_timer()  # update one last time when training is done
 
     def go_to_validating_page(self):
+        """
+        Go to the validating page.
+        :return: None
+        """
+        self.is_done = False
         self.stacked_widget.setCurrentIndex(2)
-
         self.make_model()
 
-        k_fold_train_and_validate(
-            10,
-            self.model_type.currentText(),
-            self.settings["training_data"],
-            self.model,
-            self.length,
-        )
+        df = load_dataset(resample_test_filename)
+        self.x_test, self.y_test = self.model_obj.prepare_data(df, self.length)
+
+        # Start the timer
+        self.start_time = datetime.datetime.now()
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_timer)
+        self.timer.start(1000)  # update every second
+
+        # Start the validation process
+        self.validate()
 
     def go_to_testing_page(self):
-        self.stacked_widget.setCurrentIndex(3)
+        """
+        Go to the complete page for testing.
+        :return: None
+        """
+        self.is_done = False
+        self.stacked_widget.setCurrentIndex(2)
 
         self.make_model()
 
         if self.resample:
             df = load_dataset(resample_test_filename)
         else:
-            df = load_dataset(test_filename)
-        x, y = prepare_data(df, attributes, self.length)
+            df = load_dataset(whole_test_filename)
+        self.x_test, self.y_test = self.model_obj.prepare_data(df, self.length)
+
+        # Start the timer
+        self.start_time = datetime.datetime.now()
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_timer)
+        self.timer.start(1000)  # update every second
+
+        self.thread = WorkerThread(lambda: self.run_test())
+        self.thread.task_done.connect(self.on_task_done)
+        self.thread.start()
+        time.sleep(0.1)
+
+    def run_test(self):
+        """
+        Run the test function in a new thread.
+        :return: None
+        """
         try:
-            # trained_model = load_saved_model(self.model_type.currentText(), model_name)
-            test(x, y, self.model_type.currentText(), self.model)
+            test(
+                self.x_test, self.y_test, self.model_type.currentText(), self.model_obj
+            )
         except FileNotFoundError:
             print("cannot load model for testing")
 
+        self.is_done = True
+        self.update_timer()  # update one last time when testing is done
+
     def open_file_dialog(self):
+        """
+        Open a file dialog to select the training data.
+        :return: None
+        """
         file_name, _ = QFileDialog.getOpenFileName(
             self, "Open Training Data", "", "CSV files (*.csv)"
         )
@@ -432,6 +422,204 @@ class MainWindow(QMainWindow):
             with open("settings.json", "w") as f:
                 json.dump({"training_data": file_name}, f)
 
-    def closeEvent(self, event):
-        with open("settings.json", "w") as f:
-            json.dump(self.settings, f)
+    def save_training_time(self, model_type, training_time):
+        """
+        Save the training time to a file.
+        :param model_type: type of model
+        :param training_time: time taken to train the model
+        :return:
+        """
+        with open(
+            get_results_location(model_type, self.model_obj.model_name), "a"
+        ) as f:
+            f.write(f"Training Time: {training_time} seconds\n")
+
+    def train(self):
+        """
+        Train the model on prepared dataset.
+        """
+        print("Training model...")
+
+        start_time = time.time()
+        self.model_obj.train_model(self.x_train, self.y_train)
+        training_time = time.time() - start_time
+        print(f"Training time: {training_time} seconds.")
+
+        # write training time to file
+        self.save_training_time(self.model_type.currentText(), training_time)
+
+        # Save the trained model
+        joblib.dump(
+            self.model_obj.model,
+            get_model_location(
+                self.model_type.currentText(), self.model_obj.model_name
+            ),
+        )
+
+    def go_to_training_page(self):
+        """your existing code"""
+        self.stacked_widget.setCurrentIndex(1)
+        self.make_model()
+        df = load_dataset(self.selected_file_label.text())
+
+        self.x_train, self.y_train = self.model_obj.prepare_data(df)
+        # ...
+        self.thread = WorkerThread(lambda: self.train())
+        self.thread.task_done.connect(self.on_task_done)
+        self.thread.start()
+        time.sleep(0.1)
+
+        # start timer
+        self.start_time = datetime.datetime.now()
+
+        # start timer to update label
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_timer)
+        self.timer.start(1000)  # update every second
+        # self.render(self.model, trained_model, x, y)
+
+    # *********************************************************
+    def validate(self, k=10, data_length=None):
+        """
+        Perform cross-validation on dataset.
+        Dataset is divided into k subsets,
+        with k-1 used to train, and 1 left to validate on.
+
+        :param data_length: Length of data to use.
+        If None, use all data.
+        :param k: Number of subdivisions to make from the dataset.
+        :return: None.
+        Saves model and results to model folder.
+        """
+        df = load_dataset(resample_test_filename)
+        x_test, y_test = self.model_obj.prepare_data(df, data_length)
+
+        size = int(len(self.x_test) / k)
+        print("k-size:" + str(size))
+
+        for i in range(k):
+            print("subset " + str(i + 1))
+            idx = i * size
+            self.x_train, self.y_train, self.x_test, self.y_test = k_fold_xy(
+                x_test, y_test, idx, size
+            )
+
+            value = self.x_train.isnull().sum().sum()
+            if value > 0:
+                print("null x vals: " + str(value))
+                for col in self.model_obj.attributes:
+                    num = x_train.isnull().sum()
+                    print(str(num) + " null in " + col)
+                return
+
+            # Create a new worker thread for each iteration
+            thread = WorkerThread(lambda: self.train_and_test())
+            self.threads.append(thread)
+            thread.task_done.connect(self.on_task_done)
+            thread.finished.connect(lambda: self.remove_thread(thread))  # new line
+            thread.start()
+
+            # Wait for the thread to finish before starting the next one
+
+        # Q: how do you check the size of a list?
+
+        while len(self.threads) > 0:
+            for thread in self.threads:
+                if thread.isRunning():
+                    thread.wait()
+                else:
+                    self.remove_thread(thread)
+            self.update_timer()
+            QApplication.processEvents()
+            time.sleep(0.1)
+
+        self.is_done = True
+
+    def remove_thread(self, thread):  # new method
+        try:
+            self.threads.remove(thread)
+        except ValueError:
+            pass
+
+    def train_and_test(self):
+        """
+        Train the model and perform a test.
+        """
+        self.make_model()  # New line to create a new model for each thread
+
+        print("Training model...")
+        start_time = time.time()
+        self.model_obj.train_model(self.x_train, self.y_train)
+        training_time = time.time() - start_time
+        print(f"Training time: {training_time} seconds.")
+        self.save_training_time(self.model_type.currentText(), training_time)
+        test(self.x_test, self.y_test, self.model_type.currentText(), self.model_obj)
+
+    def update_timer(self):
+        """
+        Update the timer label.
+        :return: None
+        """
+        elapsed_time = datetime.datetime.now() - self.start_time
+        if (self.thread is not None and self.thread.is_running) or len(
+            self.threads
+        ) > 0:
+            self.complete_label.setText(
+                f"Running: {str(elapsed_time.total_seconds())} seconds"
+            )
+            self.status_label.setText(
+                f"Running: {str(elapsed_time.total_seconds())} seconds"
+            )
+        else:
+            self.timer.stop()
+            # Stop the timer
+
+            self.status_label.setText(
+                f"Complete: {str(elapsed_time.total_seconds())} seconds"
+            )
+            self.complete_label.setText(
+                f"Complete: {str(elapsed_time.total_seconds())} seconds"
+            )
+
+    def on_task_done(self):
+        """
+        When the training task is done, update the timer one last time.
+        :return: None
+        """
+        self.is_done = True
+        self.update_timer()  # update one last time when training is done
+        if self.thread is not None:
+            self.thread.is_running = False
+
+
+# noinspection PyUnresolvedReferences
+class WorkerThread(QThread):
+    """
+    A thread to run a task in the background.
+    """
+
+    task_done = pyqtSignal()
+
+    def __init__(self, task=None):
+        """
+        Initialize the thread.
+        :param task: The task to run.
+        """
+        super().__init__()
+        self.task = task
+        self.is_running = False
+        self.is_task_done = False
+
+    def run(self):
+        """
+        Run the task.
+        :return: None
+        """
+        self.is_running = True
+        try:
+            if self.task:
+                self.task()
+        finally:
+            self.is_running = False
+            self.is_task_done = True
+            self.task_done.emit()
