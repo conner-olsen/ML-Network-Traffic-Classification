@@ -1,7 +1,7 @@
 # Final Project of CS534 - Artificial Intelligence
 Network Traffic Classification project using Artificial Intelligence.
 
-The project is organized as follows under the root folder (CS534_FinalProject):
+The project is organized as follows under the root folder:
 -  Data folder
   - Contains dataset .csv files
   - Contains scripts for processing the data into the training and testing files
